@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doce Sono · Boutique de Pijamas</title>
+  <meta name="description" content="Doce Sono Boutique de Pijamas — conforto e delicadeza para suas noites." />
+  <meta name="theme-color" content="#8B2F3F" />
+  <link rel="icon" href="logo.jpeg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Barra de aviso -->
+  <div class="topbar" id="topbar" hidden></div>
+
+  <!-- Header -->
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <a href="#" class="brand" aria-label="Doce Sono - início">
+        <img src="logo.jpeg" alt="Logo Doce Sono" class="brand__logo" />
+        <div class="brand__text">
+          <span class="brand__name">doce <b>sono</b></span>
+          <span class="brand__sub">boutique de pijamas</span>
+        </div>
+      </a>
+
+      <div class="search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="searchInput" placeholder="Buscar pijamas, camisolas..." aria-label="Buscar produtos" />
+      </div>
+
+      <div class="header__actions">
+        <button class="icon-btn" id="ordersBtn" aria-label="Meus pedidos" title="Meus pedidos">
+          <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>
+          <span class="icon-btn__label">Pedidos</span>
+        </button>
+        <button class="icon-btn icon-btn--cart" id="cartBtn" aria-label="Abrir carrinho" title="Carrinho">
+          <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span class="icon-btn__label">Sacola</span>
+          <span class="badge" id="cartCount">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero__inner">
+      <div class="hero__content">
+        <span class="hero__tag">Boutique de pijamas</span>
+        <h1>Conforto que abraça<br /><em>suas noites</em></h1>
+        <p>Escolha seus favoritos, monte sua sacola e finalize o pedido direto pelo WhatsApp.</p>
+        <div class="hero__cta">
+          <a href="#produtos" class="btn btn--primary">Ver coleção</a>
+          <a href="#como-comprar" class="btn btn--ghost">Como comprar</a>
+        </div>
+
+      </div>
+      <div class="hero__visual">
+        <div class="hero__blob"></div>
+        <img src="logo.jpeg" alt="Doce Sono Boutique" class="hero__logo" />
+        <span class="star s1">★</span><span class="star s2">✦</span><span class="star s3">★</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Produtos -->
+  <main id="produtos" class="section">
+    <div class="container">
+      <div class="section__head">
+        <span class="script">nossa coleção</span>
+        <h2>Escolha o seu favorito</h2>
+      </div>
+
+      <div class="toolbar">
+        <div class="chips" id="categoryChips" role="tablist"></div>
+        <select id="sortSelect" class="select" aria-label="Ordenar">
+          <option value="featured">Destaques</option>
+          <option value="price-asc">Menor preço</option>
+          <option value="price-desc">Maior preço</option>
+          <option value="name">Nome A-Z</option>
+        </select>
+      </div>
+
+      <div class="grid" id="productGrid"></div>
+      <div class="empty" id="emptyState" hidden>
+        <span>☁️</span>
+        <p id="emptyText">Nenhum produto encontrado.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Como comprar -->
+  <section id="como-comprar" class="section section--soft">
+    <div class="container">
+      <div class="section__head">
+        <span class="script">simples assim</span>
+        <h2>Como comprar</h2>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="step__n">1</div><h3>Escolha</h3><p>Selecione os produtos, o tamanho e adicione à sacola.</p></div>
+        <div class="step"><div class="step__n">2</div><h3>Finalize</h3><p>Informe seus dados e escolha entrega ou retirada.</p></div>
+        <div class="step"><div class="step__n">3</div><h3>WhatsApp</h3><p>Seu pedido completo é enviado direto para nosso WhatsApp.</p></div>
+        <div class="step"><div class="step__n">4</div><h3>Durma bem</h3><p>Receba com carinho e aproveite suas noites doces. 🌙</p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <img src="logo.jpeg" alt="Doce Sono" class="footer__logo" />
+      <p class="script footer__script">de pijamas, com amor</p>
+      <p class="footer__small">© <span id="year"></span> Doce Sono Boutique de Pijamas · Todos os direitos reservados</p>
+    </div>
+  </footer>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Carrinho -->
+  <aside class="drawer" id="cartDrawer" aria-label="Sacola de compras" aria-hidden="true">
+    <div class="drawer__head">
+      <h3>Minha sacola</h3>
+      <button class="close" data-close aria-label="Fechar">&times;</button>
+    </div>
+    <div class="drawer__body" id="cartItems"></div>
+    <div class="drawer__foot" id="cartFoot">
+      <div class="shipping-progress" id="shippingProgress"></div>
+      <div class="row"><span>Subtotal</span><strong id="cartSubtotal">R$ 0,00</strong></div>
+      <button class="btn btn--primary btn--block" id="checkoutBtn">Finalizar pedido</button>
+      <button class="btn btn--link btn--block" data-close>Continuar comprando</button>
+    </div>
+  </aside>
+
+  <!-- Pedidos -->
+  <aside class="drawer" id="ordersDrawer" aria-label="Meus pedidos" aria-hidden="true">
+    <div class="drawer__head">
+      <h3>Meus pedidos</h3>
+      <button class="close" data-close aria-label="Fechar">&times;</button>
+    </div>
+    <div class="drawer__body" id="ordersList"></div>
+  </aside>
+
+  <!-- Modal produto -->
+  <div class="modal" id="productModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal__box modal__box--product">
+      <button class="close close--float" data-close aria-label="Fechar">&times;</button>
+      <div id="productModalContent"></div>
+    </div>
+  </div>
+
+  <!-- Modal checkout -->
+  <div class="modal" id="checkoutModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal__box modal__box--checkout">
+      <button class="close close--float" data-close aria-label="Fechar">&times;</button>
+      <div class="checkout">
+        <div class="stepper" id="stepper">
+          <div class="stepper__item active"><span>1</span>Dados</div>
+          <div class="stepper__item"><span>2</span>Entrega</div>
+          <div class="stepper__item"><span>3</span>Pagamento</div>
+        </div>
+
+        <form id="checkoutForm" novalidate>
+          <!-- Etapa 1 -->
+          <fieldset class="cstep active" data-step="1">
+            <legend>Seus dados</legend>
+            <div class="field">
+              <label for="cName">Nome completo *</label>
+              <input id="cName" name="name" required autocomplete="name" placeholder="Maria Silva" />
+              <small class="err"></small>
+            </div>
+            <div class="field">
+              <label for="cPhone">WhatsApp *</label>
+              <input id="cPhone" name="phone" required inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000" />
+              <small class="err"></small>
+            </div>
+          </fieldset>
+
+          <!-- Etapa 2 -->
+          <fieldset class="cstep" data-step="2">
+            <legend>Como deseja receber?</legend>
+            <div class="options" id="deliveryOptions">
+              <label class="option" id="optDelivery">
+                <input type="radio" name="delivery" value="entrega" checked />
+                <div class="option__card"><span class="option__ico">🛵</span><strong>Entrega</strong><small id="deliveryFeeLabel"></small></div>
+              </label>
+              <label class="option" id="optPickup">
+                <input type="radio" name="delivery" value="retirada" />
+                <div class="option__card"><span class="option__ico">🏬</span><strong>Retirada</strong><small>Na loja</small></div>
+              </label>
+            </div>
+
+            <div id="addressFields">
+              <div class="grid2">
+                <div class="field">
+                  <label for="cCep">CEP *</label>
+                  <input id="cCep" name="cep" inputmode="numeric" placeholder="00000-000" />
+                  <small class="err"></small>
+                </div>
+                <div class="field">
+                  <label for="cNumber">Número *</label>
+                  <input id="cNumber" name="number" placeholder="123" />
+                  <small class="err"></small>
+                </div>
+              </div>
+              <div class="field">
+                <label for="cStreet">Rua *</label>
+                <input id="cStreet" name="street" placeholder="Rua das Flores" />
+                <small class="err"></small>
+              </div>
+              <div class="grid2">
+                <div class="field">
+                  <label for="cDistrict">Bairro *</label>
+                  <input id="cDistrict" name="district" placeholder="Centro" />
+                  <small class="err"></small>
+                </div>
+                <div class="field">
+                  <label for="cCity">Cidade *</label>
+                  <input id="cCity" name="city" placeholder="Cidade - UF" />
+                  <small class="err"></small>
+                </div>
+              </div>
+              <div class="field">
+                <label for="cComplement">Complemento / referência</label>
+                <input id="cComplement" name="complement" placeholder="Apto, bloco, ponto de referência" />
+              </div>
+            </div>
+
+            <div id="pickupInfo" class="pickup" hidden>
+              <strong>📍 Endereço para retirada</strong>
+              <p id="storeAddress"></p>
+              <small>Avisaremos pelo WhatsApp quando seu pedido estiver pronto.</small>
+            </div>
+          </fieldset>
+
+          <!-- Etapa 3 -->
+          <fieldset class="cstep" data-step="3">
+            <legend>Pagamento</legend>
+            <div class="options" id="paymentOptions"></div>
+            <p class="pay-details" id="paymentDetails" hidden></p>
+            <div class="field" id="changeField" hidden>
+              <label for="cChange">Troco para quanto?</label>
+              <input id="cChange" name="change" inputmode="decimal" placeholder="Ex: 200" />
+            </div>
+            <div class="field">
+              <label for="cNotes">Observações</label>
+              <textarea id="cNotes" name="notes" rows="2" placeholder="É presente? Quer um bilhetinho? Conte pra gente 💌"></textarea>
+            </div>
+
+            <div class="summary" id="orderSummary"></div>
+          </fieldset>
+
+          <div class="checkout__nav">
+            <button type="button" class="btn btn--ghost" id="prevStep">Voltar</button>
+            <button type="button" class="btn btn--primary" id="nextStep">Continuar</button>
+            <button type="submit" class="btn btn--primary" id="submitOrder" hidden>
+              <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+              Confirmar e Concluir Pedido
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <!-- Botão flutuante sacola (mobile) -->
+  <button class="fab" id="fabCart" aria-label="Abrir sacola">
+    <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    <span id="fabTotal">R$ 0,00</span>
+    <span class="badge" id="fabCount">0</span>
+  </button>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase_config.js"></script>
+  <script src="dados.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
+

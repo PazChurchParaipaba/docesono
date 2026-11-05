@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Painel · Doce Sono</title>
+  <link rel="icon" href="logo.jpeg" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin">
+  <header class="header">
+    <div class="container header__inner">
+      <a href="admin.html" class="brand">
+        <img src="logo.jpeg" alt="" class="brand__logo" />
+        <div class="brand__text"><span class="brand__name">doce <b>sono</b></span><span class="brand__sub">painel da loja</span></div>
+      </a>
+      <div class="header__actions" style="margin-left:auto">
+        <a href="index.html" target="_blank" class="btn btn--ghost btn--sm">Ver loja ↗</a>
+        <button class="btn btn--primary btn--sm" id="publishBtn">⬇ Publicar (dados.js)</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container admin__main">
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="pedidos">📦 Pedidos Recebidos <span class="tab__n" id="nOrders">0</span></button>
+      <button class="tab" data-tab="produtos">🛍️ Produtos <span class="tab__n" id="nProducts">0</span></button>
+      <button class="tab" data-tab="pagamentos">💳 Pagamentos <span class="tab__n" id="nPayments">0</span></button>
+      <button class="tab" data-tab="loja">⚙️ Loja e entrega</button>
+      <button class="tab" data-tab="supabase">⚡ Supabase (Banco de Dados)</button>
+      <button class="tab" data-tab="publicar">🚀 Publicar / backup</button>
+    </nav>
+
+    <!-- PEDIDOS RECEBIDOS -->
+    <section class="panel active" id="tab-pedidos">
+      <div class="panel__head">
+        <div>
+          <h2>Pedidos Recebidos</h2>
+          <p class="muted">Gerencie os pedidos feitos pelos clientes, mude o status e entre em contato direto pelo WhatsApp.</p>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center;">
+          <span id="liveStatusBadge" class="pill" style="background:#e8f5e9;color:#2e7d32;">● Tempo Real</span>
+          <button class="btn btn--ghost btn--sm" id="refreshOrdersBtn">↻ Atualizar</button>
+        </div>
+      </div>
+      <div class="toolbar" style="margin-bottom:1rem;">
+        <div class="chips" id="orderStatusFilter">
+          <button class="chip active" data-status="todos">Todos (<span id="countAll">0</span>)</button>
+          <button class="chip" data-status="pendente">Pendentes (<span id="countPending">0</span>)</button>
+          <button class="chip" data-status="em_separacao">Em separação (<span id="countPrep">0</span>)</button>
+          <button class="chip" data-status="pronto">Prontos / Enviados (<span id="countReady">0</span>)</button>
+          <button class="chip" data-status="concluido">Concluídos (<span id="countDone">0</span>)</button>
+        </div>
+      </div>
+      <div id="adminOrdersList"></div>
+    </section>
+
+    <!-- PRODUTOS -->
+    <section class="panel" id="tab-produtos">
+      <div class="panel__head">
+        <div>
+          <h2>Produtos</h2>
+          <p class="muted">Cadastre nome, preço, tamanhos e fotos. Arraste a ordem com as setas.</p>
+        </div>
+        <button class="btn btn--primary" id="newProduct">+ Novo produto</button>
+      </div>
+      <div class="search admin__search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="pSearch" placeholder="Buscar produto..." />
+      </div>
+      <div class="plist" id="productList"></div>
+    </section>
+
+    <!-- PAGAMENTOS -->
+    <section class="panel" id="tab-pagamentos">
+      <div class="panel__head">
+        <div>
+          <h2>Formas e condições de pagamento</h2>
+          <p class="muted">Aparecem na finalização do pedido e vão na mensagem do WhatsApp.</p>
+        </div>
+        <button class="btn btn--primary" id="newPayment">+ Nova forma</button>
+      </div>
+      <div id="paymentList"></div>
+      <div class="box">
+        <div class="field">
+          <label for="maxInstallments">Parcelamento sem juros exibido nos produtos</label>
+          <select id="maxInstallments" class="select select--full"></select>
+          <small class="muted">Ex.: "ou 3x de R$ 30,00 sem juros" abaixo do preço. Deixe "Não exibir" se não parcelar.</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOJA -->
+    <section class="panel" id="tab-loja">
+      <div class="panel__head"><div><h2>Loja e entrega</h2><p class="muted">Informações usadas no pedido.</p></div></div>
+      <form class="box" id="configForm">
+        <div class="grid2">
+          <div class="field">
+            <label>Nome da loja</label>
+            <input name="storeName" />
+          </div>
+          <div class="field">
+            <label>WhatsApp que recebe os pedidos *</label>
+            <input name="whatsapp" inputmode="tel" placeholder="Ex: 55 11 91234-5678" />
+            <small class="muted">Com 55 + DDD. Só números serão usados.</small>
+          </div>
+        </div>
+        <div class="field">
+          <label>Aviso no topo do site (opcional)</label>
+          <input name="announcement" placeholder="Deixe vazio para não exibir" />
+        </div>
+        <h3 class="sub">Recebimento</h3>
+        <div class="switches">
+          <label class="switch"><input type="checkbox" name="deliveryEnabled" /><span></span> Fazemos entrega</label>
+          <label class="switch"><input type="checkbox" name="pickupEnabled" /><span></span> Cliente pode retirar</label>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Taxa de entrega (R$)</label>
+            <input name="deliveryFee" inputmode="decimal" placeholder="0 = a combinar" />
+          </div>
+          <div class="field">
+            <label>Frete grátis a partir de (R$)</label>
+            <input name="freeShippingFrom" inputmode="decimal" placeholder="0 = não oferecer" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Endereço / horário para retirada</label>
+          <textarea name="storeAddress" rows="2" placeholder="Rua, número, bairro, cidade · horários"></textarea>
+        </div>
+        <button class="btn btn--primary" type="submit">Salvar</button>
+      </form>
+    </section>
+
+    <!-- SUPABASE -->
+    <section class="panel" id="tab-supabase">
+      <div class="panel__head">
+        <div>
+          <h2>Conexão Supabase</h2>
+          <p class="muted">Conecte seu banco de dados na nuvem para receber os pedidos dos clientes em tempo real.</p>
+        </div>
+      </div>
+      <form class="box" id="supabaseForm">
+        <div class="field">
+          <label>URL do Projeto Supabase (Project URL)</label>
+          <input name="sbUrl" placeholder="https://seu-projeto.supabase.co" />
+        </div>
+        <div class="field">
+          <label>Chave Pública Anônima (Anon / Public Key)</label>
+          <input name="sbAnonKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+        </div>
+        <div style="display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;margin-top:1rem;">
+          <button class="btn btn--primary" type="submit">Salvar Conexão</button>
+          <button class="btn btn--ghost" type="button" id="testSbBtn">Testar Conexão</button>
+          <span id="sbConnStatus" class="muted"></span>
+        </div>
+        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px dashed var(--blush-2)">
+          <h4 style="color:var(--wine);margin-bottom:.4rem;">Script do Banco de Dados</h4>
+          <p class="muted" style="font-size:.85rem;margin-bottom:.5rem;">Você encontra o script completo pronto para rodar no arquivo <code>supabase_schema.sql</code> na raiz da pasta do projeto. Basta copiar o conteúdo e colar no <strong>SQL Editor</strong> do seu painel do Supabase!</p>
+        </div>
+      </form>
+    </section>
+
+    <!-- PUBLICAR -->
+    <section class="panel" id="tab-publicar">
+      <div class="panel__head"><div><h2>Publicar e backup</h2></div></div>
+      <div class="box howto">
+        <h3 class="sub">Como colocar as alterações no ar</h3>
+        <ol>
+          <li>Tudo que você cadastra aqui fica salvo <b>neste navegador</b> e já aparece na loja quando você abre por aqui.</li>
+          <li>Para que <b>todos os clientes</b> vejam, clique em <b>Publicar (dados.js)</b>.</li>
+          <li>Substitua o arquivo <code>dados.js</code> da pasta do site pelo arquivo baixado (e envie para sua hospedagem, se usar uma).</li>
+        </ol>
+        <div class="row-btns">
+          <button class="btn btn--primary" id="publishBtn2">⬇ Baixar dados.js</button>
+          <label class="btn btn--ghost">⬆ Importar dados.js / backup<input type="file" id="importFile" accept=".js,.json" hidden /></label>
+          <button class="btn btn--danger" id="resetLocal">Descartar rascunho deste navegador</button>
+        </div>
+        <p class="muted" id="storageInfo"></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal produto -->
+  <div class="overlay" id="overlay"></div>
+  <div class="modal" id="productModal" aria-hidden="true">
+    <div class="modal__box modal__box--checkout admin-modal">
+      <button class="close close--float" data-close>&times;</button>
+      <form id="productForm" class="checkout">
+        <h2 id="pfTitle">Novo produto</h2>
+        <div class="field">
+          <label>Fotos (a primeira é a capa)</label>
+          <div class="photos" id="photos"></div>
+          <small class="muted">As fotos são reduzidas automaticamente para carregar rápido.</small>
+        </div>
+        <div class="field">
+          <label>Nome *</label>
+          <input name="name" required />
+          <small class="err"></small>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Preço (R$) *</label>
+            <input name="price" inputmode="decimal" required placeholder="0,00" />
+            <small class="err"></small>
+          </div>
+          <div class="field">
+            <label>Preço antigo "de" (opcional)</label>
+            <input name="old" inputmode="decimal" placeholder="Para mostrar promoção" />
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Categoria</label>
+            <input name="cat" list="catList" placeholder="Ex: Pijamas" />
+            <datalist id="catList"></datalist>
+          </div>
+          <div class="field">
+            <label>Selo (opcional)</label>
+            <input name="tag" placeholder="Ex: Novo, Promoção" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Tamanhos (separe por vírgula)</label>
+          <input name="sizes" placeholder="P, M, G, GG" />
+          <small class="muted">Deixe vazio para tamanho único.</small>
+        </div>
+        <div class="field">
+          <label>Descrição</label>
+          <textarea name="desc" rows="3"></textarea>
+        </div>
+        <label class="switch"><input type="checkbox" name="active" checked /><span></span> Visível na loja</label>
+        <div class="checkout__nav">
+          <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary">Salvar produto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal pagamento -->
+  <div class="modal" id="paymentModal" aria-hidden="true">
+    <div class="modal__box modal__box--checkout admin-modal">
+      <button class="close close--float" data-close>&times;</button>
+      <form id="paymentForm" class="checkout">
+        <h2>Forma de pagamento</h2>
+        <div class="grid2">
+          <div class="field">
+            <label>Nome *</label>
+            <input name="name" required placeholder="Ex: Pix, Cartão de crédito" />
+            <small class="err"></small>
+          </div>
+          <div class="field">
+            <label>Ícone</label>
+            <div class="icons" id="iconPick"></div>
+            <input type="hidden" name="icon" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Resumo curto (no botão)</label>
+          <input name="short" placeholder="Ex: até 3x sem juros" />
+        </div>
+        <div class="field">
+          <label>Condições / instruções</label>
+          <textarea name="details" rows="3" placeholder="Ex: Chave Pix: ...  /  Parcelamos em até 3x sem juros acima de R$ 150"></textarea>
+          <small class="muted">Aparece para o cliente e vai na mensagem do pedido. Se o nome contiver "Dinheiro", será perguntado o troco.</small>
+        </div>
+        <div class="checkout__nav">
+          <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase_config.js"></script>
+  <script src="dados.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
+
