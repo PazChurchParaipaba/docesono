@@ -42,7 +42,7 @@ const instText = v => {
   const n = parseInt(CONFIG.maxInstallments) || 1;
   return n > 1 ? `<span class="card__inst">ou ${n}x de ${brl(v / n)} sem juros</span>` : '';
 };
-const media = p => p.img ? `<img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover">` : `<span class="emoji">${p.emoji}</span>`;
+const media = p => p.img ? `<img src="${p.img}" alt="${p.name}">` : `<span class="emoji">${p.emoji}</span>`;
 
 /* ---------------- Supabase Client ---------------- */
 const getSupabase = () => {
@@ -103,6 +103,7 @@ function renderProducts() {
       <div class="card__body">
         <span class="card__cat">${p.cat}</span>
         <h3 class="card__title" data-open="${p.id}">${p.name}</h3>
+        <div class="card__sizes">${p.sizes.map(s => `<span class="card__size">${s}</span>`).join('')}</div>
         <div class="card__price"><strong>${brl(p.price)}</strong>${p.old ? `<s>${brl(p.old)}</s>` : ''}</div>
         ${instText(p.price)}
         <button class="card__add" data-open="${p.id}">
@@ -114,7 +115,8 @@ function renderProducts() {
 
 /* ---------------- Modal de produto ---------------- */
 function openProduct(id) {
-  const p = PRODUCTS.find(x => x.id === id);
+  const p = PRODUCTS.find(x => String(x.id) === String(id));
+  if (!p) return;
   let size = p.sizes.length === 1 ? p.sizes[0] : null;
   let qty = 1;
 
@@ -181,8 +183,9 @@ const subtotal = () => cart.reduce((s, i) => s + i.price * i.qty, 0);
 const itemsCount = () => cart.reduce((s, i) => s + i.qty, 0);
 
 function addToCart(id, size, qty = 1) {
-  const p = PRODUCTS.find(x => x.id === id);
-  const key = `${id}-${size}`;
+  const p = PRODUCTS.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const key = `${p.id}-${size}`;
   const ex = cart.find(i => i.key === key);
   if (ex) ex.qty += qty;
   else cart.push({ key, id, name: p.name, price: p.price, size, qty, emoji: p.emoji, img: p.img, bg: p.bg });
@@ -543,7 +546,7 @@ function bind() {
   });
   $('#sortSelect').addEventListener('change', e => { filter.sort = e.target.value; renderProducts(); });
   $('#productGrid').addEventListener('click', e => {
-    const o = e.target.closest('[data-open]'); if (o) openProduct(+o.dataset.open);
+    const o = e.target.closest('[data-open]'); if (o) openProduct(o.dataset.open);
   });
 
   $('#cartBtn').onclick = $('#fabCart').onclick = () => openPanel('#cartDrawer');
