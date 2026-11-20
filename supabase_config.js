@@ -1,8 +1,6 @@
 // Configuração de conexão com o Supabase
-// Coloque aqui a URL e a Anon Key do seu projeto Supabase.
-// Você encontra em: Supabase Dashboard -> Configurações do Projeto (Settings) -> API
+// Projeto: groezaseypdbpgymgpvo
 window.SUPABASE_CONFIG = {
-  url: '',      // Exemplo: 'https://xyzcompany.supabase.co'
-  anonKey: ''   // Exemplo: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...'
+  url: 'https://groezaseypdbpgymgpvo.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM'
 };
-

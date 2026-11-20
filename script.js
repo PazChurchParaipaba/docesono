@@ -47,7 +47,8 @@ const media = p => p.img ? `<img src="${p.img}" alt="${p.name}" style="width:100
 /* ---------------- Supabase Client ---------------- */
 const getSupabase = () => {
   if (typeof supabase === 'undefined') return null;
-  const cfg = store.get('ds_supabase_config', window.SUPABASE_CONFIG || {});
+  const localCfg = store.get('ds_supabase_config', {});
+  const cfg = (localCfg && localCfg.url && localCfg.anonKey) ? localCfg : (window.SUPABASE_CONFIG || {});
   if (!cfg.url || !cfg.anonKey) return null;
   try {
     return supabase.createClient(cfg.url, cfg.anonKey);

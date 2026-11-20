@@ -49,7 +49,12 @@ let sbClient = null;
 function initSupabase() {
   if (typeof supabase === 'undefined') return null;
   let cfg = {};
-  try { cfg = JSON.parse(localStorage.getItem('ds_supabase_config')) || window.SUPABASE_CONFIG || {}; } catch {}
+  try {
+    const localCfg = JSON.parse(localStorage.getItem('ds_supabase_config'));
+    cfg = (localCfg && localCfg.url && localCfg.anonKey) ? localCfg : (window.SUPABASE_CONFIG || {});
+  } catch {
+    cfg = window.SUPABASE_CONFIG || {};
+  }
   if (cfg.url && cfg.anonKey) {
     try {
       sbClient = supabase.createClient(cfg.url, cfg.anonKey);
@@ -536,7 +541,12 @@ const sbf = $('#supabaseForm');
 function fillSupabaseForm() {
   if (!sbf) return;
   let cfg = {};
-  try { cfg = JSON.parse(localStorage.getItem('ds_supabase_config')) || window.SUPABASE_CONFIG || {}; } catch {}
+  try {
+    const localCfg = JSON.parse(localStorage.getItem('ds_supabase_config'));
+    cfg = (localCfg && localCfg.url && localCfg.anonKey) ? localCfg : (window.SUPABASE_CONFIG || {});
+  } catch {
+    cfg = window.SUPABASE_CONFIG || {};
+  }
   sbf.elements.sbUrl.value = cfg.url || '';
   sbf.elements.sbAnonKey.value = cfg.anonKey || '';
 }
