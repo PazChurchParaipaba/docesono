@@ -22,12 +22,37 @@ const PRODUCTS = DATA.products.map((p, i) => ({
   price: +p.price || 0,
   old: +p.old || 0,
   sizes: (p.sizes && p.sizes.length) ? p.sizes : ['Único'],
+  stock: p.stock || {},
   images: p.images || [],
   img: (p.images || [])[0],
   emoji: '🌙',
   bg: PALETTE[i % PALETTE.length],
   desc: p.desc || '',
 }));
+
+/* Funções auxiliares de estoque */
+function getSizeStock(p, size) {
+  if (!p || !p.stock) return Infinity;
+  const val = p.stock[size];
+  if (val === undefined || val === null || val === '') return Infinity;
+  return Math.max(0, parseInt(val, 10) || 0);
+}
+function isProductSoldOut(p) {
+  return p.sizes.every(s => getSizeStock(p, s) <= 0);
+}
+function getTotalProductStock(p) {
+  let hasLimit = false, sum = 0;
+  for (const s of p.sizes) {
+    const st = getSizeStock(p, s);
+    if (st !== Infinity) { hasLimit = true; sum += st; }
+  }
+  return hasLimit ? sum : Infinity;
+}
+function getCartQty(prodId, size) {
+  const key = `${prodId}-${size}`;
+  const ex = cart.find(i => i.key === key);
+  return ex ? ex.qty : 0;
+}
 
 /* ---------------- Utils ---------------- */
 const $ = (s, el = document) => el.querySelector(s);
@@ -93,32 +118,53 @@ function renderProducts() {
 
   $('#emptyState').hidden = list.length > 0;
   $('#emptyText').textContent = PRODUCTS.length ? 'Nenhum produto encontrado.' : 'Em breve nossos produtos estarão aqui. 🌙';
-  $('#productGrid').innerHTML = list.map((p, i) => `
-    <article class="card" style="animation-delay:${i * 40}ms">
+  $('#productGrid').innerHTML = list.map((p, i) => {
+    const soldOut = isProductSoldOut(p);
+    const totalSt = getTotalProductStock(p);
+    const tagText = soldOut ? 'Esgotado' : (p.tag || (totalSt === 1 ? 'Peça única' : ''));
+    const tagClass = soldOut ? 'card__tag--soldout' : (p.old ? 'card__tag--sale' : '');
+    return `
+    <article class="card ${soldOut ? 'card--soldout' : ''}" style="animation-delay:${i * 40}ms">
       <div class="card__media" style="background:${bgOf(p)}" data-open="${p.id}">
-        ${p.tag ? `<span class="card__tag ${p.old ? 'card__tag--sale' : ''}">${p.tag}</span>` : ''}
+        ${tagText ? `<span class="card__tag ${tagClass}">${tagText}</span>` : ''}
         ${media(p)}
-        <span class="card__quick">Ver detalhes</span>
+        <span class="card__quick">${soldOut ? 'Esgotado' : 'Ver detalhes'}</span>
       </div>
       <div class="card__body">
         <span class="card__cat">${p.cat}</span>
         <h3 class="card__title" data-open="${p.id}">${p.name}</h3>
-        <div class="card__sizes">${p.sizes.map(s => `<span class="card__size">${s}</span>`).join('')}</div>
+        <div class="card__sizes">${p.sizes.map(s => {
+          const st = getSizeStock(p, s);
+          const out = st <= 0;
+          return `<span class="card__size ${out ? 'card__size--out' : ''}" title="${out ? 'Esgotado' : (st !== Infinity ? `Restam ${st} un.` : 'Disponível')}">${s}${st === 1 ? ' · 1 un.' : ''}</span>`;
+        }).join('')}</div>
         <div class="card__price"><strong>${brl(p.price)}</strong>${p.old ? `<s>${brl(p.old)}</s>` : ''}</div>
         ${instText(p.price)}
-        <button class="card__add" data-open="${p.id}">
-          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Adicionar
+        <button class="card__add" data-open="${p.id}" ${soldOut ? 'disabled' : ''}>
+          ${soldOut ? 'Esgotado' : '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Adicionar'}
         </button>
       </div>
-    </article>`).join('');
+    </article>`;
+  }).join('');
 }
 
 /* ---------------- Modal de produto ---------------- */
 function openProduct(id) {
   const p = PRODUCTS.find(x => String(x.id) === String(id));
   if (!p) return;
-  let size = p.sizes.length === 1 ? p.sizes[0] : null;
+  const availSizes = p.sizes.filter(s => getSizeStock(p, s) > 0);
+  let size = availSizes.length === 1 ? availSizes[0] : null;
   let qty = 1;
+  const soldOut = availSizes.length === 0;
+
+  const stockHint = sz => {
+    if (!sz) return '';
+    const st = getSizeStock(p, sz);
+    if (st === Infinity) return '';
+    if (st <= 0) return 'Tamanho esgotado';
+    if (st === 1) return '✨ Última unidade disponível neste tamanho!';
+    return `Restam ${st} unidades neste tamanho`;
+  };
 
   $('#productModalContent').innerHTML = `
     <div class="pmodal">
@@ -134,12 +180,17 @@ function openProduct(id) {
         <div>
           <span class="label-sm">Tamanho</span>
           <div class="sizes" id="pmSizes">
-            ${p.sizes.map(s => `<button class="size ${s === size ? 'active' : ''}" data-size="${s}">${s}</button>`).join('')}
+            ${p.sizes.map(s => {
+              const st = getSizeStock(p, s);
+              const out = st <= 0;
+              return `<button class="size ${s === size ? 'active' : ''} ${out ? 'size--out' : ''}" data-size="${s}" ${out ? 'disabled title="Esgotado"' : ''}>${s}${out ? ' (Esgotado)' : ''}</button>`;
+            }).join('')}
           </div>
+          <small id="pmStockHint" style="display:block;margin-top:.4rem;color:var(--wine);font-weight:500;">${stockHint(size)}</small>
         </div>
         <div class="pmodal__actions">
-          <div class="qty"><button data-q="-1" aria-label="Diminuir">−</button><span id="pmQty">1</span><button data-q="1" aria-label="Aumentar">+</button></div>
-          <button class="btn btn--primary" id="pmAdd">Adicionar · ${brl(p.price)}</button>
+          <div class="qty"><button data-q="-1" aria-label="Diminuir" ${soldOut ? 'disabled' : ''}>−</button><span id="pmQty">1</span><button data-q="1" aria-label="Aumentar" ${soldOut ? 'disabled' : ''}>+</button></div>
+          <button class="btn btn--primary" id="pmAdd" ${soldOut ? 'disabled' : ''}>${soldOut ? 'Produto Esgotado' : `Adicionar · ${brl(p.price)}`}</button>
         </div>
       </div>
     </div>`;
@@ -152,24 +203,36 @@ function openProduct(id) {
       $$('.thumb', box).forEach(b => b.classList.toggle('active', b === th));
     }
     const s = e.target.closest('[data-size]');
-    if (s) {
+    if (s && !s.disabled) {
       size = s.dataset.size;
       $$('.size', box).forEach(b => b.classList.toggle('active', b === s));
+      const maxSt = getSizeStock(p, size) - getCartQty(p.id, size);
+      if (qty > Math.max(1, maxSt)) {
+        qty = Math.max(1, maxSt);
+        $('#pmQty').textContent = qty;
+        $('#pmAdd').textContent = `Adicionar · ${brl(p.price * qty)}`;
+      }
+      $('#pmStockHint').textContent = stockHint(size);
     }
     const q = e.target.closest('[data-q]');
-    if (q) {
-      qty = Math.max(1, Math.min(20, qty + +q.dataset.q));
+    if (q && !soldOut) {
+      const maxAvail = size ? Math.max(1, getSizeStock(p, size) - getCartQty(p.id, size)) : 20;
+      const nextQ = qty + +q.dataset.q;
+      if (size && nextQ > getSizeStock(p, size) - getCartQty(p.id, size)) {
+        toast(`Temos apenas ${getSizeStock(p, size)} un. disponível no tamanho ${size}`, '📦');
+      }
+      qty = Math.max(1, Math.min(20, maxAvail, nextQ));
       $('#pmQty').textContent = qty;
       $('#pmAdd').textContent = `Adicionar · ${brl(p.price * qty)}`;
     }
-    if (e.target.closest('#pmAdd')) {
+    if (e.target.closest('#pmAdd') && !soldOut) {
       if (!size) {
         const el = $('#pmSizes');
         el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
         toast('Escolha um tamanho 😊', '📏');
         return;
       }
-      addToCart(p.id, size, qty);
+      if (!addToCart(p.id, size, qty)) return;
       closeAll();
       setTimeout(() => openPanel('#cartDrawer'), 250);
     }
@@ -184,19 +247,34 @@ const itemsCount = () => cart.reduce((s, i) => s + i.qty, 0);
 
 function addToCart(id, size, qty = 1) {
   const p = PRODUCTS.find(x => String(x.id) === String(id));
-  if (!p) return;
+  if (!p) return false;
+  const maxSt = getSizeStock(p, size);
   const key = `${p.id}-${size}`;
   const ex = cart.find(i => i.key === key);
+  const curQty = ex ? ex.qty : 0;
+  if (curQty + qty > maxSt) {
+    toast(maxSt <= 0 ? `Tamanho ${size} esgotado` : `Apenas ${maxSt} un. disponível no tamanho ${size} (você já tem ${curQty} na sacola)`, '📦');
+    return false;
+  }
   if (ex) ex.qty += qty;
-  else cart.push({ key, id, name: p.name, price: p.price, size, qty, emoji: p.emoji, img: p.img, bg: p.bg });
+  else cart.push({ key, id: p.id, name: p.name, price: p.price, size, qty, emoji: p.emoji, img: p.img, bg: p.bg });
   saveCart(); renderCart();
   toast(`${p.name} adicionado à sacola`, '🛍️');
   $$('.badge').forEach(b => { b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); });
+  return true;
 }
 
 function updateQty(key, d) {
   const it = cart.find(i => i.key === key);
   if (!it) return;
+  if (d > 0) {
+    const p = PRODUCTS.find(x => String(x.id) === String(it.id));
+    const maxSt = getSizeStock(p, it.size);
+    if (it.qty + d > maxSt) {
+      toast(`Estoque máximo atingido (${maxSt} un. no tamanho ${it.size})`, '📦');
+      return;
+    }
+  }
   it.qty += d;
   if (it.qty <= 0) cart = cart.filter(i => i.key !== key);
   saveCart(); renderCart();
@@ -399,6 +477,38 @@ async function submitOrder(e) {
   const change = isCash() && F.change.value.trim()
     ? brl(parseFloat(F.change.value.replace(',', '.')) || 0) : '';
 
+  // 0. Verifica estoque atualizado e dá baixa nos itens comprados
+  for (const item of cart) {
+    const p = PRODUCTS.find(x => String(x.id) === String(item.id) || x.name === item.name);
+    if (p) {
+      const avail = getSizeStock(p, item.size);
+      if (avail < item.qty) {
+        toast(`Ops! "${p.name}" (Tam: ${item.size}) tem apenas ${avail} un. disponível agora.`, '⚠️');
+        return;
+      }
+    }
+  }
+
+  // Baixa o estoque em memória, localStorage e Supabase
+  let localAdminData = null;
+  try { localAdminData = JSON.parse(localStorage.getItem('ds_admin_data')); } catch {}
+  for (const item of cart) {
+    const p = PRODUCTS.find(x => String(x.id) === String(item.id) || x.name === item.name);
+    if (p && getSizeStock(p, item.size) !== Infinity) {
+      p.stock[item.size] = Math.max(0, getSizeStock(p, item.size) - item.qty);
+      if (localAdminData && localAdminData.products) {
+        const lp = localAdminData.products.find(x => String(x.id) === String(p.id));
+        if (lp) { lp.stock = { ...(lp.stock || {}), [item.size]: p.stock[item.size] }; }
+      }
+      if (sbClient) {
+        sbClient.from('docesono_products').update({ stock: p.stock, updated_at: new Date().toISOString() }).eq('id', String(p.id)).then(() => {});
+      }
+    }
+  }
+  if (localAdminData) {
+    try { localStorage.setItem('ds_admin_data', JSON.stringify(localAdminData)); } catch {}
+  }
+
   const orderId = Date.now().toString().slice(-6);
   const order = {
     id: orderId,
@@ -422,7 +532,7 @@ async function submitOrder(e) {
     fee,
     delivery_fee: fee,
     total: sub + fee,
-    items: cart.map(({ name, size, qty, price }) => ({ name, size, qty, price })),
+    items: cart.map(({ id, name, size, qty, price }) => ({ id, name, size, qty, price })),
     status: 'pendente'
   };
 
@@ -469,7 +579,7 @@ async function submitOrder(e) {
   orders.unshift(order);
   store.set('ds_orders', orders);
 
-  cart = []; saveCart(); renderCart(); renderOrders();
+  cart = []; saveCart(); renderCart(); renderProducts(); renderOrders();
   F.notes.value = ''; F.change.value = '';
   closeAll();
 
@@ -623,6 +733,27 @@ function applyConfig() {
     : '<p class="pay-details">Forma de pagamento a combinar pelo WhatsApp.</p>';
   if (!DATA.payments.length) $('#paymentOptions').insertAdjacentHTML('beforeend', '<input type="radio" name="payment" value="A combinar" checked hidden>');
 }
+async function syncLiveStockFromSupabase() {
+  if (!sbClient) return;
+  try {
+    const { data: dbProds, error } = await sbClient
+      .from('docesono_products')
+      .select('id, stock, sizes, active')
+      .order('display_order', { ascending: true });
+    if (!error && dbProds && dbProds.length) {
+      dbProds.forEach(row => {
+        const p = PRODUCTS.find(x => String(x.id) === String(row.id));
+        if (p && row.stock) {
+          p.stock = row.stock;
+        }
+      });
+      renderProducts();
+    }
+  } catch (err) {
+    console.warn('Falha ao sincronizar estoque em tempo real:', err);
+  }
+}
+
 applyConfig();
 $('#storeAddress').textContent = CONFIG.storeAddress || 'Combinaremos o local pelo WhatsApp.';
 $('#year').textContent = new Date().getFullYear();
@@ -631,3 +762,4 @@ renderProducts();
 renderCart();
 renderOrders();
 bind();
+syncLiveStockFromSupabase();

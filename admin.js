@@ -27,7 +27,60 @@ function save(silent) {
   } catch {
     toast('Espaço do navegador cheio. Use menos fotos ou publique e descarte o rascunho.', '⚠️');
   }
+  syncProductsToSupabase();
   renderAll();
+}
+
+async function syncProductsToSupabase() {
+  if (!sbClient) return;
+  try {
+    const rows = data.products.map((p, idx) => ({
+      id: String(p.id),
+      name: p.name,
+      price: +p.price || 0,
+      old_price: +p.old || 0,
+      category: p.cat || '',
+      tag: p.tag || '',
+      sizes: (p.sizes && p.sizes.length) ? p.sizes : ['Único'],
+      stock: p.stock || {},
+      description: p.desc || '',
+      images: p.images || [],
+      active: p.active !== false,
+      display_order: idx,
+      updated_at: new Date().toISOString()
+    }));
+    if (rows.length) {
+      await sbClient.from('docesono_products').upsert(rows, { onConflict: 'id' });
+    }
+  } catch (err) {
+    console.warn('Aviso ao sincronizar estoque com Supabase:', err);
+  }
+}
+
+async function fetchStockFromSupabase() {
+  if (!sbClient) return;
+  try {
+    const { data: dbProds, error } = await sbClient
+      .from('docesono_products')
+      .select('id, stock, sizes, active')
+      .order('display_order', { ascending: true });
+    if (!error && dbProds && dbProds.length) {
+      let changed = false;
+      dbProds.forEach(row => {
+        const localProd = data.products.find(p => String(p.id) === String(row.id));
+        if (localProd && row.stock && Object.keys(row.stock).length) {
+          localProd.stock = row.stock;
+          changed = true;
+        }
+      });
+      if (changed) {
+        try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
+        renderProducts();
+      }
+    }
+  } catch (err) {
+    console.warn('Erro ao buscar estoque no Supabase:', err);
+  }
 }
 
 function toast(msg, icon = '💗') {
@@ -296,6 +349,20 @@ $('#refreshOrdersBtn').onclick = () => {
 };
 
 /* ---------- Produtos ---------- */
+function formatStockSummary(p) {
+  const sizes = (p.sizes && p.sizes.length) ? p.sizes : ['Único'];
+  const st = p.stock || {};
+  const hasStockDefined = sizes.some(s => st[s] !== undefined && st[s] !== '' && st[s] !== null);
+  if (!hasStockDefined) return `<span class="muted">Estoque livre</span>`;
+  return sizes.map(s => {
+    const q = st[s];
+    if (q === undefined || q === '' || q === null) return `${esc(s)}: ∞`;
+    const n = +q;
+    const color = n <= 0 ? '#c62828' : (n === 1 ? '#e65100' : '#2e7d32');
+    return `<span style="color:${color};font-weight:600">${esc(s)}: ${n} un.</span>`;
+  }).join(' · ');
+}
+
 function renderProducts() {
   const q = $('#pSearch').value.trim().toLowerCase();
   $('#nProducts').textContent = data.products.length;
@@ -309,7 +376,7 @@ function renderProducts() {
       <div class="prow__img">${p.images && p.images[0] ? `<img src="${p.images[0]}" alt="">` : '📷'}</div>
       <div>
         <div class="prow__name">${esc(p.name)}</div>
-        <div class="prow__meta">${esc(p.cat || 'Sem categoria')} · ${(p.sizes || []).join(', ') || 'Único'}${p.active === false ? ' · <b>oculto</b>' : ''}</div>
+        <div class="prow__meta">${esc(p.cat || 'Sem categoria')} · ${formatStockSummary(p)}${p.active === false ? ' · <b>oculto</b>' : ''}</div>
         <div class="prow__price">${brl(p.price)} ${p.old ? `<s class="muted">${brl(p.old)}</s>` : ''}</div>
       </div>
       <div class="prow__actions">
@@ -332,19 +399,49 @@ $('#productList').addEventListener('click', e => {
     case 'toggle': P[i].active = P[i].active === false; break;
     case 'dup': P.splice(i + 1, 0, { ...JSON.parse(JSON.stringify(P[i])), id: uid(), name: P[i].name + ' (cópia)' }); break;
     case 'edit': return editProduct(i);
-    case 'del': if (!confirm(`Excluir "${P[i].name}"?`)) return; P.splice(i, 1); break;
+    case 'del':
+      if (!confirm(`Excluir "${P[i].name}"?`)) return;
+      if (sbClient && P[i].id) {
+        sbClient.from('docesono_products').delete().eq('id', String(P[i].id)).then(() => {});
+      }
+      P.splice(i, 1);
+      break;
   }
   save(true);
 });
 $('#pSearch').addEventListener('input', renderProducts);
 $('#newProduct').onclick = () => editProduct();
 
-let editing = null, photos = [];
+let editing = null, photos = [], currentStock = {};
 const pf = $('#productForm');
+
+function getParsedSizes() {
+  const arr = pf.elements.sizes.value.split(',').map(s => s.trim()).filter(Boolean);
+  return arr.length ? arr : ['Único'];
+}
+
+function renderStockInputs() {
+  // Antes de re-renderizar, preserva o que o usuário já digitou nos inputs atuais
+  $$('#pfStockGrid input[data-stock-size]').forEach(inp => {
+    const sz = inp.dataset.stockSize;
+    currentStock[sz] = inp.value.trim() === '' ? '' : Math.max(0, parseInt(inp.value, 10) || 0);
+  });
+  const sizes = getParsedSizes();
+  $('#pfStockGrid').innerHTML = sizes.map(sz => {
+    const val = currentStock[sz] !== undefined && currentStock[sz] !== null ? currentStock[sz] : '';
+    return `
+      <div class="stock-item">
+        <span class="stock-item__label">Tam. <b>${esc(sz)}</b></span>
+        <input type="number" min="0" step="1" data-stock-size="${esc(sz)}" value="${val}" placeholder="Qtd (ex: 1)" />
+      </div>`;
+  }).join('');
+}
+
+$('#pfSizes').addEventListener('input', renderStockInputs);
 
 function editProduct(i) {
   editing = i ?? null;
-  const p = i != null ? data.products[i] : { active: true };
+  const p = i != null ? data.products[i] : { active: true, stock: { 'Único': 1 } };
   $('#pfTitle').textContent = i != null ? 'Editar produto' : 'Novo produto';
   pf.elements.name.value = p.name || '';
   pf.elements.price.value = fmtNum(p.price);
@@ -355,6 +452,9 @@ function editProduct(i) {
   pf.elements.desc.value = p.desc || '';
   pf.elements.active.checked = p.active !== false;
   photos = [...(p.images || [])];
+  currentStock = { ...(p.stock || {}) };
+  $('#pfStockGrid').innerHTML = '';
+  renderStockInputs();
   $$('.field', pf).forEach(f => { f.classList.remove('invalid'); const er = $('.err', f); if (er) er.textContent = ''; });
   $('#catList').innerHTML = [...new Set(data.products.map(x => x.cat).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('');
   renderPhotos();
@@ -426,6 +526,15 @@ pf.addEventListener('submit', e => {
   setErr(E.name, E.name.value.trim() ? '' : 'Informe o nome');
   setErr(E.price, num(E.price.value) > 0 ? '' : 'Informe um preço válido');
   if (!ok) return;
+  const sizesArr = E.sizes.value.split(',').map(s => s.trim()).filter(Boolean);
+  const finalSizes = sizesArr.length ? sizesArr : ['Único'];
+  const stockObj = {};
+  $$('#pfStockGrid input[data-stock-size]').forEach(inp => {
+    const sz = inp.dataset.stockSize;
+    if (inp.value.trim() !== '') {
+      stockObj[sz] = Math.max(0, parseInt(inp.value, 10) || 0);
+    }
+  });
   const prod = {
     id: editing != null ? data.products[editing].id : uid(),
     name: E.name.value.trim(),
@@ -433,7 +542,8 @@ pf.addEventListener('submit', e => {
     old: num(E.old.value) || 0,
     cat: E.cat.value.trim(),
     tag: E.tag.value.trim(),
-    sizes: E.sizes.value.split(',').map(s => s.trim()).filter(Boolean),
+    sizes: finalSizes,
+    stock: stockObj,
     desc: E.desc.value.trim(),
     images: photos,
     active: E.active.checked,
@@ -626,4 +736,5 @@ fillConfig();
 fillSupabaseForm();
 renderAll();
 fetchOrders();
+fetchStockFromSupabase();
 setupRealtime();

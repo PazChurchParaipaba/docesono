@@ -28,7 +28,7 @@ create table if not exists public.docesono_orders (
 create index if not exists idx_docesono_orders_created_at on public.docesono_orders (created_at desc);
 create index if not exists idx_docesono_orders_status on public.docesono_orders (status);
 
--- 2. TABELA DE PRODUTOS DA DOCE SONO (docesono_products)
+-- 2. TABELA DE PRODUTOS E ESTOQUE DA DOCE SONO (docesono_products)
 create table if not exists public.docesono_products (
     id text primary key,
     name text not null,
@@ -37,6 +37,7 @@ create table if not exists public.docesono_products (
     category text default '',
     tag text default '',
     sizes jsonb default '[]'::jsonb,
+    stock jsonb default '{}'::jsonb,
     description text default '',
     images jsonb default '[]'::jsonb,
     active boolean default true,
@@ -44,44 +45,46 @@ create table if not exists public.docesono_products (
     updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Caso a tabela já tenha sido criada antes sem a coluna stock, adiciona automaticamente:
+alter table public.docesono_products add column if not exists stock jsonb default '{}'::jsonb;
+
 -- 3. HABILITAR ROW LEVEL SECURITY (RLS)
 alter table public.docesono_orders enable row level security;
 alter table public.docesono_products enable row level security;
 
 -- 4. POLÍTICAS DE ACESSO (RLS)
-
--- Clientes públicos (anon) podem inserir pedidos
+drop policy if exists "docesono_clientes_podem_criar_pedido" on public.docesono_orders;
 create policy "docesono_clientes_podem_criar_pedido"
 on public.docesono_orders for insert
 to anon, authenticated
 with check (true);
 
--- Leitura de pedidos
+drop policy if exists "docesono_permitir_leitura_pedidos" on public.docesono_orders;
 create policy "docesono_permitir_leitura_pedidos"
 on public.docesono_orders for select
 to anon, authenticated
 using (true);
 
--- Atualização de status
+drop policy if exists "docesono_permitir_atualizar_pedidos" on public.docesono_orders;
 create policy "docesono_permitir_atualizar_pedidos"
 on public.docesono_orders for update
 to anon, authenticated
 using (true)
 with check (true);
 
--- Remoção de pedidos
+drop policy if exists "docesono_permitir_deletar_pedidos" on public.docesono_orders;
 create policy "docesono_permitir_deletar_pedidos"
 on public.docesono_orders for delete
 to anon, authenticated
 using (true);
 
--- Vitrine de produtos
+drop policy if exists "docesono_produtos_visiveis" on public.docesono_products;
 create policy "docesono_produtos_visiveis"
 on public.docesono_products for select
 to anon, authenticated
 using (true);
 
--- Gerenciamento de produtos
+drop policy if exists "docesono_gerenciar_produtos" on public.docesono_products;
 create policy "docesono_gerenciar_produtos"
 on public.docesono_products for all
 to anon, authenticated
@@ -89,7 +92,6 @@ using (true)
 with check (true);
 
 -- 5. HABILITAR REALTIME APENAS PARA AS TABELAS DOCESONO
--- Adiciona com segurança à publicação existente do Supabase
 do $$
 begin
   if not exists (

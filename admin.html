@@ -225,8 +225,13 @@
         </div>
         <div class="field">
           <label>Tamanhos (separe por vírgula)</label>
-          <input name="sizes" placeholder="P, M, G, GG" />
+          <input name="sizes" id="pfSizes" placeholder="P, M, G, GG" />
           <small class="muted">Deixe vazio para tamanho único.</small>
+        </div>
+        <div class="field">
+          <label>Estoque disponível por tamanho (unidades)</label>
+          <div class="stock-grid" id="pfStockGrid"></div>
+          <small class="muted">Informe quantas unidades você tem de cada tamanho (ex: 1). Quando um cliente comprar, o estoque baixa sozinho! Deixe em branco se não quiser limitar.</small>
         </div>
         <div class="field">
           <label>Descrição</label>

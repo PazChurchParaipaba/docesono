@@ -127,3 +127,29 @@
     padding: .4rem .8rem;
   }
 }
+
+/* Grid de Estoque por Tamanho no Admin */
+.stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: .6rem;
+  margin-top: .3rem;
+}
+.stock-item {
+  background: var(--cream);
+  border: 1.5px solid var(--blush-2);
+  border-radius: 12px;
+  padding: .5rem .7rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+.stock-item__label {
+  font-size: .78rem;
+  color: var(--wine);
+}
+.stock-item input {
+  padding: .45rem .6rem !important;
+  font-size: .88rem;
+  border-radius: 8px !important;
+}

@@ -353,3 +353,11 @@ h1, h2, h3 { font-family: 'Cormorant Garamond', serif; color: var(--wine); line-
 .thumb.active, .thumb:hover { opacity: 1; border-color: var(--wine); }
 .pay-details { background: var(--white); border-left: 3px solid var(--gold); padding: .7rem .9rem; border-radius: 10px; font-size: .84rem; margin: -.4rem 0 1rem; white-space: pre-line; color: var(--text); }
 #paymentOptions { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+
+/* Estoque e Esgotado na Loja */
+.card--soldout { opacity: .75; }
+.card--soldout .card__media img { filter: grayscale(35%); }
+.card__tag--soldout { background: #6e5a5d; color: #fff; }
+.card__size--out { text-decoration: line-through; opacity: .5; background: #f2eae8; color: var(--muted); }
+.card__add:disabled { opacity: .6; cursor: not-allowed; background: #ede3e0; color: var(--muted); }
+.size--out { text-decoration: line-through; opacity: .45; cursor: not-allowed; background: #f2eae8; }
